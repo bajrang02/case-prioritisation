@@ -33,7 +33,7 @@ export default function App() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/cases')
+        const res = await fetch('${import.meta.env.VITE_API_URL}/api/cases')
         if (res.ok) {
           const data = await res.json()
           setCases(data)
@@ -52,7 +52,7 @@ export default function App() {
     if (user?.id === 'Admin') {
       const getPending = async () => {
         try {
-          const res = await fetch('/api/users/pending')
+          const res = await fetch('${import.meta.env.VITE_API_URL}/api/users/pending')
           if (res.ok) setPendingUsers(await res.json())
         } catch (e) { }
       }
@@ -69,7 +69,7 @@ export default function App() {
 
   const refreshCases = async () => {
     try {
-      const res = await fetch('/api/cases')
+      const res = await fetch('${import.meta.env.VITE_API_URL}/api/cases')
       if (res.ok) {
         const data = await res.json()
         setCases(scoreCases(data)) // re-apply scoring locally if config changed

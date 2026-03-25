@@ -2,8 +2,12 @@ import express from 'express'
 import cors from 'cors'
 import { query, run } from './db.js'
 
+
 const app = express()
-app.use(cors())
+app.use(cors({
+  origin: 'https://jurisflow-3an7.onrender.com',
+  credentials: true
+}))
 app.use(express.json())
 
 // === AUTH & USERS API ===
@@ -131,8 +135,7 @@ app.put('/api/cases/:id/take', async (req, res) => {
   }
 })
 
-const PORT = process.env.PORT || 3000;
-
+const PORT = 3000
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  console.log(`Legal Backend Server running on http://localhost:${PORT}`)
+})

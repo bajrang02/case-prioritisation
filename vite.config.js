@@ -7,11 +7,6 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
-    proxy: {
-      '/api': {
-        target: 'https://case-prioritisation-1.onrender.com/api',
-        changeOrigin: true
-      }
-    }
+    
   }
 })

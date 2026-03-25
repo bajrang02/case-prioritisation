@@ -16,7 +16,7 @@ export default function Dashboard({ cases, navigate, user, pendingUsers, setPend
   // Fetch approved users if admin
   useEffect(() => {
     if (user?.id === 'Admin') {
-      fetch('/api/users').then(r => r.json()).then(setApprovedUsers).catch(console.error)
+      fetch('${import.meta.env.VITE_API_URL}/api/users').then(r => r.json()).then(setApprovedUsers).catch(console.error)
     }
   }, [user, pendingUsers])
 
@@ -27,7 +27,7 @@ export default function Dashboard({ cases, navigate, user, pendingUsers, setPend
 
   const approveUser = async (pUser) => {
     try {
-      const res = await fetch('/api/users/approve', {
+      const res = await fetch('${import.meta.env.VITE_API_URL}/api/users/approve', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: pUser.id, action: 'approve' })
       })
@@ -41,7 +41,7 @@ export default function Dashboard({ cases, navigate, user, pendingUsers, setPend
   const rejectUser = async (pUser) => {
     // ... logic left unchanged
     try {
-      const res = await fetch('/api/users/approve', {
+      const res = await fetch('${import.meta.env.VITE_API_URL}/api/users/approve', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: pUser.id, action: 'reject' })
       })

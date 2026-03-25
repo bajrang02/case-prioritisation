@@ -11,7 +11,7 @@ export default function NewCase({ cases, setCases, showToast, navigate, user }) 
     // Fetch registered users and filter by Judge role
     const fetchJudges = async () => {
       try {
-        const res = await fetch('/api/users')
+        const res = await fetch('${import.meta.env.VITE_API_URL}/api/users')
         if (res.ok) {
           const data = await res.json()
           setJudgeList(data.filter(u => u.role === 'Judge'))
@@ -38,7 +38,7 @@ export default function NewCase({ cases, setCases, showToast, navigate, user }) 
     }
     
     try {
-      const res = await fetch('/api/cases', {
+      const res = await fetch('${import.meta.env.VITE_API_URL}/api/cases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCase)
