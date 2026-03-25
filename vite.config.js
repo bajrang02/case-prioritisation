@@ -9,7 +9,7 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'https://case-prioritisation-1.onrender.com',
+        target: 'https://case-prioritisation-1.onrender.com/api',
         changeOrigin: true
       }
     }
