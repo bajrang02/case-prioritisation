@@ -34,6 +34,7 @@ function initializeDB() {
       type TEXT NOT NULL,
       court TEXT NOT NULL,
       judge TEXT,
+      lawyerId TEXT,
       filingDate TEXT,
       status TEXT,
       petitioner TEXT,
@@ -52,18 +53,30 @@ function initializeDB() {
       complexityScore INTEGER,
       urgencyIndex INTEGER,
       combinedScore INTEGER,
-      aiPriority TEXT,
-      lawyer TEXT
+      aiPriority TEXT
     )`)
 
     // Seed defaults if empty
-    db.get('SELECT COUNT(*) as count FROM users', (err, row) => {
+    db.get('SELECT COUNT(*) as count FROM users', async (err, row) => {
       if (!err && row.count === 0) {
         console.log('Seeding initial users...')
         const stmt = db.prepare('INSERT INTO users (id, pass, name, role, status) VALUES (?, ?, ?, ?, ?)')
         stmt.run('Admin', 'Admin', 'Justice Admin', 'System Administrator', 'approved')
         stmt.run('judge', 'judge123', 'Hon. Judge', 'Judge', 'approved')
         stmt.run('lawyer', 'lawyer123', 'Advocate Smith', 'Lawyer', 'approved')
+        
+        // Seed the sample judges as registered users
+        try {
+          const dataPath = path.resolve(__dirname, '../src/data/sampleData.js')
+          if (fs.existsSync(dataPath)) {
+            const { judges } = await import('file://' + dataPath.replace(/\\/g, '/'))
+            for (const j of judges) {
+              stmt.run(j.id, 'judge123', j.name, 'Judge', 'approved')
+            }
+          }
+        } catch(e) {
+          console.error('Failed to seed sample judges:', e.message)
+        }
         stmt.finalize()
       }
     })
@@ -82,16 +95,16 @@ function initializeDB() {
             const { scoreCases } = await import('file://' + path.resolve(__dirname, '../src/services/aiEngine.js').replace(/\\/g, '/'))
             const scored = scoreCases(initialCases)
 
-            const stmt = db.prepare(`INSERT INTO cases (id, title, type, court, judge, filingDate, status, petitioner, respondent, documents, hearings, witnesses, custodyInvolved, fundamentalRights, publicInterest, crossJurisdiction, charges, precedents, nextHearing, statutoryDeadline, complexityScore, urgencyIndex, combinedScore, aiPriority, lawyer) 
+            const stmt = db.prepare(`INSERT INTO cases (id, title, type, court, judge, lawyerId, filingDate, status, petitioner, respondent, documents, hearings, witnesses, custodyInvolved, fundamentalRights, publicInterest, crossJurisdiction, charges, precedents, nextHearing, statutoryDeadline, complexityScore, urgencyIndex, combinedScore, aiPriority) 
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 
             for (const c of scored) {
               stmt.run(
-                c.id, c.title, c.type, c.court, c.judge || '', c.filingDate, c.status, 
+                c.id, c.title, c.type, c.court, c.judge || '', 'lawyer', c.filingDate, c.status, 
                 c.parties.petitioner, c.parties.respondent, c.documents, c.hearings, c.witnesses, 
                 c.custodyInvolved ? 1 : 0, c.fundamentalRights ? 1 : 0, c.publicInterest, 
                 c.crossJurisdiction ? 1 : 0, c.charges, c.precedents, c.nextHearing, c.statutoryDeadline, 
-                c.complexityScore, c.urgencyIndex, c.combinedScore, c.aiPriority, 'lawyer'
+                c.complexityScore, c.urgencyIndex, c.combinedScore, c.aiPriority
               )
             }
             stmt.finalize()

@@ -74,43 +74,16 @@ app.delete('/api/users/:id', async (req, res) => {
 
 // === CASES API ===
 app.get('/api/cases', async (req, res) => {
-  const { userId, userRole } = req.query
   try {
-    let rows = await query('SELECT * FROM cases')
+    const rows = await query('SELECT * FROM cases')
     // Parse the boolean and JSON-like fields back into proper structures for the frontend
-    let cases = rows.map(c => ({
+    const cases = rows.map(c => ({
       ...c,
       custodyInvolved: Boolean(c.custodyInvolved),
       fundamentalRights: Boolean(c.fundamentalRights),
       crossJurisdiction: Boolean(c.crossJurisdiction),
       parties: { petitioner: c.petitioner, respondent: c.respondent }
     }))
-
-    cases = cases.filter(c => {
-      const isDummyCase = /^(SC|HC|DC|SS)-/.test(c.id)
-      const isDummyUser = ['Admin', 'judge', 'lawyer'].includes(userId)
-
-      if (isDummyCase && !isDummyUser) return false
-      if (userRole === 'System Administrator' || userId === 'Admin') return true
-
-      if (userRole === 'Judge') {
-        if (userId === 'judge' && isDummyCase) return true
-        return c.judge === userId
-      }
-
-      if (userRole === 'Lawyer') {
-        if (userId === 'lawyer' && isDummyCase) return true
-        return c.lawyer === userId
-      }
-
-      return false
-    })
-
-    if (userRole === 'Judge') {
-      const pMap = { 'Critical': 4, 'High': 3, 'Medium': 2, 'Low': 1 }
-      cases.sort((a, b) => (pMap[b.aiPriority] || 0) - (pMap[a.aiPriority] || 0))
-    }
-
     res.json(cases)
   } catch(e) {
     res.status(500).json({ error: e.message })
@@ -121,14 +94,14 @@ app.post('/api/cases', async (req, res) => {
   const c = req.body
   try {
     await run(
-      `INSERT INTO cases (id, title, type, court, judge, filingDate, status, petitioner, respondent, documents, hearings, witnesses, custodyInvolved, fundamentalRights, publicInterest, crossJurisdiction, charges, precedents, nextHearing, statutoryDeadline, complexityScore, urgencyIndex, combinedScore, aiPriority, lawyer) 
+      `INSERT INTO cases (id, title, type, court, judge, lawyerId, filingDate, status, petitioner, respondent, documents, hearings, witnesses, custodyInvolved, fundamentalRights, publicInterest, crossJurisdiction, charges, precedents, nextHearing, statutoryDeadline, complexityScore, urgencyIndex, combinedScore, aiPriority) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        c.id, c.title, c.type, c.court, c.judge || '', c.filingDate, c.status, 
+        c.id, c.title, c.type, c.court, c.judge || '', c.lawyerId || '', c.filingDate, c.status, 
         c.parties?.petitioner || '', c.parties?.respondent || '', c.documents || 0, c.hearings || 0, c.witnesses || 0, 
         c.custodyInvolved ? 1 : 0, c.fundamentalRights ? 1 : 0, c.publicInterest || 1, 
         c.crossJurisdiction ? 1 : 0, c.charges || 1, c.precedents || 0, c.nextHearing || '', c.statutoryDeadline || '', 
-        c.complexityScore || 0, c.urgencyIndex || 0, c.combinedScore || 0, c.aiPriority || 'Low', c.lawyer || ''
+        c.complexityScore || 0, c.urgencyIndex || 0, c.combinedScore || 0, c.aiPriority || 'Low'
       ]
     )
     res.json({ success: true, case: c })

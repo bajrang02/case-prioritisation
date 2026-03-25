@@ -1,24 +1,40 @@
-import { useState } from 'react'
-import { caseTypes, courts, judges } from '../data/sampleData'
+import { useState, useEffect } from 'react'
+import { caseTypes, courts } from '../data/sampleData'
 import { scoreCases } from '../services/aiEngine'
 
 export default function NewCase({ cases, setCases, showToast, navigate, user }) {
   const [form, setForm] = useState({ title: '', type: '', court: '', judge: '', petitioner: '', respondent: '', documents: 1, witnesses: 0, charges: 1, custody: false, rights: false, crossJur: false, publicInterest: 3, deadline: '' })
+  const [judgeList, setJudgeList] = useState([])
+  const [judgeSearch, setJudgeSearch] = useState('')
 
+  useEffect(() => {
+    // Fetch registered users and filter by Judge role
+    const fetchJudges = async () => {
+      try {
+        const res = await fetch('/api/users')
+        if (res.ok) {
+          const data = await res.json()
+          setJudgeList(data.filter(u => u.role === 'Judge'))
+        }
+      } catch (err) {
+        console.error('Failed to fetch judges', err)
+      }
+    }
+    fetchJudges()
+  }, [])
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const submit = async () => {
     if (!form.title || !form.type || !form.court || !form.judge || !form.petitioner || !form.respondent) { showToast('Fill all required fields', 'error'); return }
     const newCase = {
       id: `${form.type.substring(0, 2).toUpperCase()}-${new Date().getFullYear()}-${Math.floor(Math.random() * 900 + 100)}`,
-      title: form.title, type: form.type, court: form.court, judge: form.judge,
+      title: form.title, type: form.type, court: form.court, judge: form.judge, lawyerId: user.id,
       filingDate: new Date().toISOString().split('T')[0], status: 'Filed',
       parties: { petitioner: form.petitioner, respondent: form.respondent },
       documents: form.documents, hearings: 0, witnesses: form.witnesses,
       custodyInvolved: form.custody, fundamentalRights: form.rights,
       publicInterest: form.publicInterest, crossJurisdiction: form.crossJur,
-      charges: form.charges, precedents: 0, nextHearing: '', statutoryDeadline: form.deadline,
-      lawyer: user?.id || ''
+      charges: form.charges, precedents: 0, nextHearing: '', statutoryDeadline: form.deadline
     }
     
     try {
@@ -49,7 +65,14 @@ export default function NewCase({ cases, setCases, showToast, navigate, user }) 
           <label className="form-label">Title</label><input className="form-input" value={form.title} onChange={e => set('title', e.target.value)} placeholder="e.g. State vs. Doe — Theft" />
           <label className="form-label">Type</label><select className="form-select" value={form.type} onChange={e => set('type', e.target.value)}><option value="">Select...</option>{caseTypes.map(t => <option key={t}>{t}</option>)}</select>
           <label className="form-label">Court</label><select className="form-select" value={form.court} onChange={e => set('court', e.target.value)}><option value="">Select...</option>{courts.map(c => <option key={c}>{c}</option>)}</select>
-          <label className="form-label">Judge</label><select className="form-select" value={form.judge} onChange={e => set('judge', e.target.value)}><option value="">Select...</option>{judges.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}</select>
+          <label className="form-label">Judge</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <input className="form-input" placeholder="Search Judge by name..." value={judgeSearch} onChange={e => setJudgeSearch(e.target.value)} />
+            <select className="form-select" value={form.judge} onChange={e => set('judge', e.target.value)}>
+              <option value="">Select Registered Judge...</option>
+              {judgeList.filter(j => j.name.toLowerCase().includes(judgeSearch.toLowerCase())).map(j => <option key={j.id} value={j.id}>{j.name} ({j.id})</option>)}
+            </select>
+          </div>
         </div>
         <div className="card">
           <h3>Parties & Details</h3>

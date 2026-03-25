@@ -8,8 +8,8 @@ import AIPrioritization from './pages/AIPrioritization'
 import AIAnalysis from './pages/AIAnalysis'
 import NewCase from './pages/NewCase'
 import Settings from './pages/Settings'
-import Schedule from './pages/Schedule'
 import Chatbot from './components/Chatbot'
+import LandingPage from './pages/LandingPage'
 import { scoreCases } from './services/aiEngine'
 
 export default function App() {
@@ -21,21 +21,18 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const [theme, setTheme] = useState(localStorage.getItem('jf-theme') || 'justice')
   const [isLoading, setIsLoading] = useState(true)
+  const [showLogin, setShowLogin] = useState(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
     localStorage.setItem('jf-theme', theme)
   }, [theme])
 
+  // Fetch initial data
   useEffect(() => {
-    if (!user) {
-      setCases([])
-      setIsLoading(false)
-      return
-    }
     const fetchData = async () => {
       try {
-        const res = await fetch(`/api/cases?userId=${user.id}&userRole=${user.role}`)
+        const res = await fetch('/api/cases')
         if (res.ok) {
           const data = await res.json()
           setCases(data)
@@ -47,7 +44,7 @@ export default function App() {
       }
     }
     fetchData()
-  }, [user])
+  }, [])
 
   // Fetch pending users periodically if Admin is logged in
   useEffect(() => {
@@ -56,7 +53,7 @@ export default function App() {
         try {
           const res = await fetch('/api/users/pending')
           if (res.ok) setPendingUsers(await res.json())
-        } catch(e) {}
+        } catch (e) { }
       }
       getPending()
       const intv = setInterval(getPending, 10000)
@@ -71,13 +68,12 @@ export default function App() {
 
   const refreshCases = async () => {
     try {
-      if (!user) return;
-      const res = await fetch(`/api/cases?userId=${user.id}&userRole=${user.role}`)
+      const res = await fetch('/api/cases')
       if (res.ok) {
         const data = await res.json()
         setCases(scoreCases(data)) // re-apply scoring locally if config changed
       }
-    } catch(e) {}
+    } catch (e) { }
   }
 
   const handleLogout = () => {
@@ -99,15 +95,23 @@ export default function App() {
     </div>
   )
 
-  if (!user) return <Login onLogin={setUser} showToast={showToast} />
+  if (!user) {
+    if (showLogin) return <Login onLogin={setUser} showToast={showToast} onBack={() => setShowLogin(false)} />
+    return <LandingPage onGoToLogin={() => setShowLogin(true)} />
+  }
+
+  const visibleCases = cases.filter(c => {
+    if (user?.role === 'Lawyer') return c.lawyerId === user.id
+    if (user?.role === 'Judge') return c.judge === user.id
+    return true
+  })
 
   const pages = {
-    dashboard: <Dashboard cases={cases} navigate={setPage} user={user} pendingUsers={pendingUsers} setPendingUsers={setPendingUsers} showToast={showToast} />,
-    cases: <Cases cases={cases} setCases={setCases} showToast={showToast} user={user} />,
-    prioritization: <AIPrioritization cases={cases} showToast={showToast} user={user} setCases={setCases} />,
-    'ai-analysis': <AIAnalysis cases={cases} showToast={showToast} />,
+    dashboard: <Dashboard cases={visibleCases} navigate={setPage} user={user} pendingUsers={pendingUsers} setPendingUsers={setPendingUsers} showToast={showToast} />,
+    cases: <Cases cases={visibleCases} setCases={setCases} showToast={showToast} user={user} />,
+    prioritization: <AIPrioritization cases={visibleCases} showToast={showToast} user={user} setCases={setCases} />,
+    'ai-analysis': <AIAnalysis cases={visibleCases} showToast={showToast} />,
     newcase: <NewCase cases={cases} setCases={setCases} showToast={showToast} navigate={setPage} user={user} />,
-    schedule: <Schedule cases={cases} user={user} navigate={setPage} showToast={showToast} setCases={setCases} />,
     settings: <Settings showToast={showToast} refreshCases={refreshCases} onLogout={handleLogout} user={user} theme={theme} setTheme={setTheme} />
   }
 
