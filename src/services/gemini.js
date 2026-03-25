@@ -1,35 +1,24 @@
 import { judges } from '../data/sampleData'
 
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const MODEL = 'gemini-2.0-flash'
-const BASE = 'https://generativelanguage.googleapis.com/v1beta/models/'
-
 export function isConfigured() {
-  return API_KEY && API_KEY !== 'your_gemini_api_key_here' && API_KEY.length > 10
+  return typeof window !== 'undefined' && typeof window.puter !== 'undefined'
 }
 
-async function callGemini(prompt) {
-  if (!isConfigured()) throw new Error('Gemini API key not configured. Add VITE_GEMINI_API_KEY to .env file.')
-  const res = await fetch(`${BASE}${MODEL}:generateContent?key=${API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, topP: 0.9, maxOutputTokens: 4096 }
-    })
-  })
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.error?.message || `API Error: ${res.status}`)
+async function callAI(prompt) {
+  if (!isConfigured()) throw new Error('Puter.js is not loaded.')
+  
+  try {
+    const response = await window.puter.ai.chat(prompt)
+    if (typeof response === 'string') return response
+    return response?.message?.content || response.toString()
+  } catch (error) {
+    throw new Error('Puter AI Error: ' + error.message)
   }
-  const data = await res.json()
-  if (data.candidates?.[0]?.content) return data.candidates[0].content.parts[0].text
-  throw new Error('Empty response from Gemini')
 }
 
 export async function analyzeCase(c) {
   const judge = judges.find(j => j.id === c.judge)
-  return callGemini(
+  return callAI(
     `You are an expert Indian legal AI assistant. Analyze this case:\n\n` +
     `Case ID: ${c.id}\nTitle: ${c.title}\nType: ${c.type}\nCourt: ${c.court}\n` +
     `Judge: ${judge?.name || 'Unassigned'}\nFiled: ${c.filingDate}\nStatus: ${c.status}\n` +
@@ -44,7 +33,7 @@ export async function analyzeCase(c) {
 
 export async function getJudgeRecommendation(c) {
   const judgeList = judges.map(j => `- ${j.name} | ${j.court} | ${j.specialization} | Load: ${j.caseLoad}/${j.maxLoad} | Efficiency: ${j.efficiency}%`).join('\n')
-  return callGemini(
+  return callAI(
     `Recommend the best judge for this case:\n\nCase: ${c.title}\nType: ${c.type}\nCourt: ${c.court}\nComplexity: ${c.complexityScore || 'N/A'}/100\n\n` +
     `Available Judges:\n${judgeList}\n\n` +
     `Provide:\n## Top Recommendation\n## Alternative Option\n## Selection Criteria\n## Considerations\n\nFocus on specialization match and workload balance.`
@@ -53,14 +42,14 @@ export async function getJudgeRecommendation(c) {
 
 export async function compareCases(cases) {
   const desc = cases.map((c, i) => `Case ${i + 1}: ${c.id} — ${c.title}\n  Type: ${c.type} | Complexity: ${c.complexityScore} | Urgency: ${c.urgencyIndex} | Priority: ${c.aiPriority}`).join('\n\n')
-  return callGemini(
+  return callAI(
     `Compare and rank these cases by priority:\n\n${desc}\n\n` +
     `Provide:\n## Priority Order\n## Comparative Analysis\n## Critical Factors\n## Action Items`
   )
 }
 
 export async function summarizeArguments(c) {
-  return callGemini(
+  return callAI(
     `Summarize the key arguments for petitioner (${c.parties.petitioner}) and respondent (${c.parties.respondent}) in case ${c.id}: ${c.title}. Provide a neutral, 3-bullet summary for each side.`
   )
 }
@@ -82,5 +71,5 @@ ${formattedHistory}
 
 Respond to the last User message. Remember, refuse off-topic inquiries.`
 
-  return callGemini(prompt)
+  return callAI(prompt)
 }

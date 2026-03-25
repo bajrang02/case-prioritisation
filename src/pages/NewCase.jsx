@@ -25,7 +25,7 @@ export default function NewCase({ cases, setCases, showToast, navigate, user }) 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const submit = async () => {
-    if (!form.title || !form.type || !form.court || !form.judge || !form.petitioner || !form.respondent) { showToast('Fill all required fields', 'error'); return }
+    if (!form.title || !form.type || !form.court || !form.petitioner || !form.respondent) { showToast('Fill all required fields', 'error'); return }
     const newCase = {
       id: `${form.type.substring(0, 2).toUpperCase()}-${new Date().getFullYear()}-${Math.floor(Math.random() * 900 + 100)}`,
       title: form.title, type: form.type, court: form.court, judge: form.judge, lawyerId: user.id,

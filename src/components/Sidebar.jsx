@@ -1,12 +1,13 @@
 export default function Sidebar({ page, setPage, collapsed, setCollapsed, user }) {
   const isAdmin = user?.id === 'Admin'
-  const canAddCase = user?.id === 'lawyer'
+  const canAddCase = user?.role === 'Lawyer'
 
   const mainItems = isAdmin 
     ? [ { id: 'dashboard', icon: 'fa-users-cog', label: 'User Management' } ]
     : [
         { id: 'dashboard', icon: 'fa-th-large', label: 'Dashboard' },
         { id: 'cases', icon: 'fa-folder-open', label: 'Cases' },
+        { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule' },
         ...(user?.role === 'Judge' ? [{ id: 'prioritization', icon: 'fa-robot', label: 'AI Prioritization' }] : []),
         ...(canAddCase ? [{ id: 'newcase', icon: 'fa-plus-circle', label: 'File New Case' }] : []),
         ...(user?.role !== 'Lawyer' ? [{ id: 'ai-analysis', icon: 'fa-magic', label: 'AI Analysis' }] : [])

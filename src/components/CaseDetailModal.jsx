@@ -51,7 +51,7 @@ export default function CaseDetailModal({ c, onClose, onAnalyze, onJudgeRec, onT
           </div>
           <hr />
           
-          {user?.role === 'Judge' && (
+          {user?.role === 'Judge' && c.judge === user.id && c.status !== 'Filed' && (
             <div className="card" style={{ marginBottom: 24, padding: 20, border: '1px solid var(--primary)' }}>
               <h4 style={{ color: 'var(--primary)', marginBottom: 16 }}><i className="fas fa-gavel" /> Judge Decision Panel</h4>
               <div className="form-grid" style={{ gap: 16 }}>
@@ -86,8 +86,8 @@ export default function CaseDetailModal({ c, onClose, onAnalyze, onJudgeRec, onT
               <p>Witnesses: {c.witnesses} | Charges: {c.charges}</p>
             </div>
           </div>
-          {loading && <div className="ai-loading"><div className="spinner" /><span>Gemini is analyzing...</span></div>}
-          {aiResult && <div className="ai-result"><h4><i className="fas fa-robot" /> Gemini Analysis</h4><div className="ai-md" dangerouslySetInnerHTML={{ __html: renderMd(aiResult) }} /></div>}
+          {loading && <div className="ai-loading"><div className="spinner" /><span>Puter AI is analyzing...</span></div>}
+          {aiResult && <div className="ai-result"><h4><i className="fas fa-robot" /> Puter AI Analysis</h4><div className="ai-md" dangerouslySetInnerHTML={{ __html: renderMd(aiResult) }} /></div>}
         </div>
         <div className="modal-footer">
           <button className="btn btn-primary" onClick={() => handleAi(onAnalyze)}><i className="fas fa-robot" /> AI Analyze</button>

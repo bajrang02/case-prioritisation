@@ -121,6 +121,16 @@ app.put('/api/cases/:id', async (req, res) => {
   }
 })
 
+app.put('/api/cases/:id/take', async (req, res) => {
+  const { judgeId } = req.body
+  try {
+    await run('UPDATE cases SET judge = ?, status = ? WHERE id = ?', [judgeId, 'In Progress', req.params.id])
+    res.json({ success: true })
+  } catch(e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Legal Backend Server running on http://localhost:${PORT}`)

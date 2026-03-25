@@ -15,7 +15,7 @@ export default function AIPrioritization({ cases, setCases, showToast, user }) {
   cases.forEach(c => counts[c.aiPriority]++)
 
   const doCompareTop = async () => {
-    if (!isConfigured()) { showToast('Set VITE_GEMINI_API_KEY in .env', 'error'); return }
+    if (!isConfigured()) { showToast('Puter.js is still loading or unavailable', 'error'); return }
     let top = cases.filter(c => c.aiPriority === 'Critical').slice(0, 3)
     if (top.length < 2) top = cases.slice(0, 3)
     setLoading(true); setCompareResult(null)

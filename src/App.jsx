@@ -7,6 +7,7 @@ import Cases from './pages/Cases'
 import AIPrioritization from './pages/AIPrioritization'
 import AIAnalysis from './pages/AIAnalysis'
 import NewCase from './pages/NewCase'
+import Schedule from './pages/Schedule'
 import Settings from './pages/Settings'
 import Chatbot from './components/Chatbot'
 import LandingPage from './pages/LandingPage'
@@ -102,7 +103,7 @@ export default function App() {
 
   const visibleCases = cases.filter(c => {
     if (user?.role === 'Lawyer') return c.lawyerId === user.id
-    if (user?.role === 'Judge') return c.judge === user.id
+    if (user?.role === 'Judge') return c.judge === user.id || !c.judge || c.judge === ''
     return true
   })
 
@@ -112,6 +113,7 @@ export default function App() {
     prioritization: <AIPrioritization cases={visibleCases} showToast={showToast} user={user} setCases={setCases} />,
     'ai-analysis': <AIAnalysis cases={visibleCases} showToast={showToast} />,
     newcase: <NewCase cases={cases} setCases={setCases} showToast={showToast} navigate={setPage} user={user} />,
+    schedule: <Schedule cases={visibleCases} showToast={showToast} user={user} />,
     settings: <Settings showToast={showToast} refreshCases={refreshCases} onLogout={handleLogout} user={user} theme={theme} setTheme={setTheme} />
   }
 

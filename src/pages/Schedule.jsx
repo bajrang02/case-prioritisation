@@ -1,62 +1,55 @@
-import { useState } from 'react'
+import { useMemo } from 'react'
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 
-export default function Schedule({ cases, user, navigate }) {
-  // sort by next hearing date (nearest first, blanks at the end)
-  const sorted = [...cases].sort((a, b) => {
-    if (!a.nextHearing) return 1;
-    if (!b.nextHearing) return -1;
-    return new Date(a.nextHearing) - new Date(b.nextHearing);
-  })
+export default function Schedule({ cases, user }) {
+  // Sort cases by nextHearing if available, otherwise filingDate. Filter out Disposed.
+  const scheduleItems = useMemo(() => {
+    return cases
+      .filter(c => c.status !== 'Disposed')
+      .sort((a, b) => {
+        const dateA = new Date(a.nextHearing || a.filingDate).getTime()
+        const dateB = new Date(b.nextHearing || b.filingDate).getTime()
+        return dateA - dateB
+      })
+  }, [cases])
 
   return (
     <div>
       <div className="page-header">
-        <h1>My Schedule</h1>
-        <p>Track your upcoming case hearings and status</p>
+        <h1>Schedule</h1>
+        <p>Upcoming hearings and case milestones for {user.role === 'Judge' ? `Judge ${user.name}` : user.name}</p>
       </div>
-
       <div className="card">
-        <div className="card-head">
-          <h3>Upcoming Hearings</h3>
-        </div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Case ID</th>
-              <th>Title</th>
-              <th>Court & Judge</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map(c => {
-              const isPast = c.nextHearing && new Date(c.nextHearing) < new Date();
-              return (
-                <tr key={c.id}>
-                  <td className={isPast ? 'meta' : 'bold'}>
-                    {c.nextHearing ? (
-                      <><i className="fas fa-calendar-day" style={{marginRight:8, color: isPast ? 'inherit': 'var(--primary)'}} />{fmtDate(c.nextHearing)}</>
-                    ) : 'Pending Scheduling'}
-                  </td>
-                  <td className="link" onClick={() => navigate('cases')}>{c.id}</td>
-                  <td>{c.title}</td>
-                  <td>{c.court}</td>
-                  <td><span className={`badge st-${c.status.toLowerCase().replace(/\s+/g, '-')}`}>{c.status}</span></td>
-                </tr>
-              )
-            })}
-            {sorted.length === 0 && (
+        {scheduleItems.length === 0 ? (
+          <p style={{ padding: 20, color: 'var(--muted)', textAlign: 'center' }}>No upcoming schedules.</p>
+        ) : (
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
-                  No active cases in your schedule.
-                </td>
+                <th>Date</th>
+                <th>Case ID</th>
+                <th>Title</th>
+                <th>Status</th>
+                <th>Type</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {scheduleItems.map(c => (
+                <tr key={c.id}>
+                  <td className="bold" style={{ color: c.nextHearing ? 'var(--primary)' : 'inherit' }}>
+                    {fmtDate(c.nextHearing || c.filingDate)}
+                    {!c.nextHearing && <span style={{fontSize: '0.8rem', marginLeft: '6px', color: 'var(--muted)'}}> (Filing)</span>}
+                  </td>
+                  <td>{c.id}</td>
+                  <td>{c.title}</td>
+                  <td><span className={`badge st-${c.status.toLowerCase().replace(/\s+/g, '-')}`}>{c.status}</span></td>
+                  <td>{c.type}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )
