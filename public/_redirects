@@ -1,0 +1,2 @@
+/api/*  https://jurisflow-3an7.onrender.com/api/:splat  200
+/*  /index.html  200
