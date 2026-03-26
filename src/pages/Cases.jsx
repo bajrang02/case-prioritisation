@@ -2,7 +2,7 @@ import { useState } from 'react'
 import CaseDetailModal from '../components/CaseDetailModal'
 import { caseTypes, statuses } from '../data/sampleData'
 import { scoreCases } from '../services/aiEngine'
-import { analyzeCase, getJudgeRecommendation, summarizeArguments } from '../services/gemini'
+import { analyzeCase, getJudgeRecommendation, summarizeArguments } from '../services/groq'
 
 const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
 const prClass = p => ({ Critical: 'p-critical', High: 'p-high', Medium: 'p-medium', Low: 'p-low' }[p] || '')
@@ -24,12 +24,12 @@ export default function Cases({ cases, setCases, showToast, user }) {
 
   const takeCase = async id => {
     try {
-      const res = await fetch(`/api/cases/${id}/take`, {
+      const res = await fetch(`/api/cases/${id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ judgeId: user.id })
+        body: JSON.stringify({ status: 'In Progress', nextHearing: '' })
       })
       if (res.ok) {
-        const updated = cases.map(c => c.id === id ? { ...c, status: 'In Progress', judge: user.id } : c)
+        const updated = cases.map(c => c.id === id ? { ...c, status: 'In Progress' } : c)
         setCases(scoreCases(updated))
         showToast(`Case ${id} taken — status updated to In Progress`, 'success')
       }
@@ -72,7 +72,7 @@ export default function Cases({ cases, setCases, showToast, user }) {
           </div>
         ))}
       </div>
-      {selected && <CaseDetailModal c={selected} onClose={() => setSelected(null)} onAnalyze={analyzeCase} onJudgeRec={getJudgeRecommendation} onTakeCase={(user?.role === 'System Administrator' || (user?.role === 'Judge' && (!selected.judge || (selected.judge === user.id && selected.status === 'Filed')))) ? takeCase : null} user={user} onUpdate={updateCase} onSummarize={summarizeArguments} />}
+      {selected && <CaseDetailModal c={selected} onClose={() => setSelected(null)} onAnalyze={analyzeCase} onJudgeRec={getJudgeRecommendation} onTakeCase={user?.role === 'Judge' || user?.role === 'System Administrator' ? takeCase : null} user={user} onUpdate={updateCase} onSummarize={summarizeArguments} />}
     </div>
   )
 }

@@ -16,18 +16,20 @@ export default function Dashboard({ cases, navigate, user, pendingUsers, setPend
   // Fetch approved users if admin
   useEffect(() => {
     if (user?.id === 'Admin') {
-      fetch('${import.meta.env.VITE_API_URL}/api/users').then(r => r.json()).then(setApprovedUsers).catch(console.error)
+      fetch('/api/users').then(r => r.json()).then(setApprovedUsers).catch(console.error)
     }
   }, [user, pendingUsers])
 
   const pending = cases.filter(c => c.status !== 'Disposed').length
   const critical = cases.filter(c => c.aiPriority === 'Critical').length
   const avg = cases.length ? Math.round(cases.reduce((s, c) => s + c.complexityScore, 0) / cases.length) : 0
-  const hoursSaved = cases.filter(c => c.status === 'Disposed').length * 4.5 || 142
+  const hoursSaved = cases.filter(c => c.status === 'Disposed').length * 4.5
+  const disposedCount = cases.filter(c => c.status === 'Disposed').length
+  const pendingHearings = cases.filter(c => c.nextHearing && new Date(c.nextHearing) > new Date()).length
 
   const approveUser = async (pUser) => {
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL}/api/users/approve', {
+      const res = await fetch('/api/users/approve', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: pUser.id, action: 'approve' })
       })
@@ -41,7 +43,7 @@ export default function Dashboard({ cases, navigate, user, pendingUsers, setPend
   const rejectUser = async (pUser) => {
     // ... logic left unchanged
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL}/api/users/approve', {
+      const res = await fetch('/api/users/approve', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: pUser.id, action: 'reject' })
       })
@@ -162,30 +164,67 @@ export default function Dashboard({ cases, navigate, user, pendingUsers, setPend
       <div className="kpi-grid">
         <div className="kpi-card" onClick={() => navigate('cases')} style={{ cursor: 'pointer' }} title="View all cases">
           <div className="kpi-icon bg-indigo"><i className="fas fa-folder-open" /></div>
-          <div className="kpi-info"><div className="kpi-val">{cases.length}</div><div className="kpi-label">Total Cases</div></div>
+          <div className="kpi-info"><div className="kpi-val">{cases.length}</div><div className="kpi-label">{user?.role === 'Lawyer' ? 'My Filed Cases' : 'Total Cases'}</div></div>
         </div>
-        <div className="kpi-card" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.05))', border: '1px solid var(--emerald)' }} title="Impact Metric">
-          <div className="kpi-icon bg-emerald" style={{ boxShadow: '0 0 12px var(--emerald)' }}><i className="fas fa-bolt" /></div>
-          <div className="kpi-info"><div className="kpi-val" style={{ color: 'var(--emerald)' }}>{hoursSaved} hrs</div><div className="kpi-label">Est. Judicial Hours Saved</div></div>
-        </div>
-        <div className="kpi-card" onClick={() => navigate('prioritization')} style={{ cursor: 'pointer' }} title="View critical cases">
-          <div className="kpi-icon bg-rose"><i className="fas fa-exclamation-triangle" /></div>
-          <div className="kpi-info"><div className="kpi-val">{critical}</div><div className="kpi-label">Critical</div></div>
-        </div>
-        <div className="kpi-card" onClick={() => navigate('prioritization')} style={{ cursor: 'pointer' }} title="View AI Prioritization">
-          <div className="kpi-icon bg-amber"><i className="fas fa-brain" /></div>
-          <div className="kpi-info"><div className="kpi-val">{avg}</div><div className="kpi-label">Avg Complexity</div></div>
-        </div>
+        
+        {user?.role === 'Judge' ? (
+          <>
+            <div className="kpi-card" style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.05))', border: '1px solid var(--emerald)' }} title="Impact Metric">
+              <div className="kpi-icon bg-emerald" style={{ boxShadow: '0 0 12px var(--emerald)' }}><i className="fas fa-bolt" /></div>
+              <div className="kpi-info"><div className="kpi-val" style={{ color: 'var(--emerald)' }}>{hoursSaved} hrs</div><div className="kpi-label">Est. Judicial Hours Saved</div></div>
+            </div>
+            <div className="kpi-card" onClick={() => navigate('prioritization')} style={{ cursor: 'pointer' }} title="View critical cases">
+              <div className="kpi-icon bg-rose"><i className="fas fa-exclamation-triangle" /></div>
+              <div className="kpi-info"><div className="kpi-val">{critical}</div><div className="kpi-label">Critical</div></div>
+            </div>
+            <div className="kpi-card" onClick={() => navigate('prioritization')} style={{ cursor: 'pointer' }} title="View AI Prioritization">
+              <div className="kpi-icon bg-amber"><i className="fas fa-brain" /></div>
+              <div className="kpi-info"><div className="kpi-val">{avg}</div><div className="kpi-label">Avg Complexity</div></div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="kpi-card" title="Upcoming Hearings">
+              <div className="kpi-icon bg-amber"><i className="fas fa-calendar-alt" /></div>
+              <div className="kpi-info"><div className="kpi-val">{pendingHearings}</div><div className="kpi-label">Upcoming Hearings</div></div>
+            </div>
+            <div className="kpi-card" title="Disposed Cases">
+              <div className="kpi-icon bg-emerald"><i className="fas fa-check-circle" /></div>
+              <div className="kpi-info"><div className="kpi-val">{disposedCount}</div><div className="kpi-label">Disposed Cases</div></div>
+            </div>
+            <div className="kpi-card" title="Active Litigations">
+              <div className="kpi-icon bg-rose"><i className="fas fa-balance-scale" /></div>
+              <div className="kpi-info"><div className="kpi-val">{pending}</div><div className="kpi-label">Active Litigations</div></div>
+            </div>
+          </>
+        )}
       </div>
-      <div className="charts-grid">
-        <div className="card"><h3>Priority Distribution <span className="meta" style={{fontSize:'0.8rem', marginLeft: 8}}>(Click pie piece to filter list)</span></h3><div className="chart-box"><canvas ref={prRef} /></div></div>
-        <div className="card"><h3>Cases by Type</h3><div className="chart-box"><canvas ref={tyRef} /></div></div>
-      </div>
-      <div className="card">
-        <div className="card-head"><h3>{chartFilter ? `${chartFilter} Priority Cases` : 'High Priority Cases'}</h3><button className="btn btn-outline btn-sm" onClick={() => { setChartFilter(null); navigate('cases') }}>View All</button></div>
-        <table className="table"><thead><tr><th>Case ID</th><th>Title</th><th>Type</th><th>Priority</th><th>Score</th><th>Next Hearing</th><th>Status</th></tr></thead>
-        <tbody>{top.map(c => <tr key={c.id}><td className="link">{c.id}</td><td>{c.title.substring(0, 40)}…</td><td>{c.type}</td><td><span className={`badge ${prClass(c.aiPriority)}`}>{c.aiPriority}</span></td><td>{c.combinedScore}</td><td>{fmtDate(c.nextHearing)}</td><td><span className={`badge st-${c.status.toLowerCase().replace(/\s+/g, '-')}`}>{c.status}</span></td></tr>)}</tbody></table>
-      </div>
+      {cases.length > 0 ? (
+        <>
+          <div className="charts-grid">
+            <div className="card"><h3>Priority Distribution <span className="meta" style={{fontSize:'0.8rem', marginLeft: 8}}>(Click pie piece to filter list)</span></h3><div className="chart-box"><canvas ref={prRef} /></div></div>
+            <div className="card"><h3>Cases by Type</h3><div className="chart-box"><canvas ref={tyRef} /></div></div>
+          </div>
+          <div className="card">
+            <div className="card-head"><h3>{chartFilter ? `${chartFilter} Priority Cases` : 'High Priority Cases'}</h3><button className="btn btn-outline btn-sm" onClick={() => { setChartFilter(null); navigate('cases') }}>View All</button></div>
+            <table className="table"><thead><tr><th>Case ID</th><th>Title</th><th>Type</th><th>Priority</th><th>Score</th><th>Next Hearing</th><th>Status</th></tr></thead>
+            <tbody>{top.map(c => <tr key={c.id}><td className="link">{c.id}</td><td>{c.title.substring(0, 40)}…</td><td>{c.type}</td><td><span className={`badge ${prClass(c.aiPriority)}`}>{c.aiPriority}</span></td><td>{c.combinedScore}</td><td>{fmtDate(c.nextHearing)}</td><td><span className={`badge st-${c.status.toLowerCase().replace(/\s+/g, '-')}`}>{c.status}</span></td></tr>)}</tbody></table>
+          </div>
+        </>
+      ) : (
+        <div className="card" style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--muted)' }}>
+          <i className="fas fa-folder-open" style={{ fontSize: '3rem', marginBottom: 16, opacity: 0.3 }}></i>
+          <h3>No Cases Found</h3>
+          <p>There are no active cases to display on the dashboard at this time.</p>
+          {user?.role === 'Lawyer' && (
+            <div style={{ marginTop: 24 }}>
+              <button className="btn btn-primary" onClick={() => navigate('newcase')}>
+                <i className="fas fa-plus-circle"></i> File Your First Case
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

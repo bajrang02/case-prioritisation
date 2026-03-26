@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { renderMd } from '../components/CaseDetailModal'
-import { isConfigured, analyzeCase, getJudgeRecommendation, compareCases } from '../services/gemini'
+import { isConfigured, analyzeCase, getJudgeRecommendation, compareCases } from '../services/groq'
 
 export default function AIAnalysis({ cases, showToast }) {
   const [result, setResult] = useState(null)
@@ -43,8 +43,8 @@ export default function AIAnalysis({ cases, showToast }) {
 
   return (
     <div>
-      <div className="page-header"><h1>AI Case Analysis</h1><p>Puter AI-powered deep analysis & recommendations</p></div>
-      {!configured && <div className="alert alert-warn"><i className="fas fa-exclamation-triangle" /> Puter.js is not loaded or still loading. Check your internet connection.</div>}
+      <div className="page-header"><h1>AI Case Analysis</h1><p>Groq-powered deep analysis & recommendations</p></div>
+      {!configured && <div className="alert alert-warn"><i className="fas fa-exclamation-triangle" /> API key not set — add <code>VITE_GROQ_API_KEY</code> to your <code>.env</code> file and restart the dev server.</div>}
       <div className="ai-tools-grid">
         <div className="card">
           <h3><i className="fas fa-microscope" /> Analyze Case</h3>
@@ -60,7 +60,7 @@ export default function AIAnalysis({ cases, showToast }) {
         </div>
         <div className="card" style={{ gridColumn: '1/-1' }}>
           <h3><i className="fas fa-balance-scale-right" /> Compare & Prioritize</h3>
-          <p className="meta">Select 2–3 cases to compare with Puter AI.</p>
+          <p className="meta">Select 2–3 cases to compare with Groq AI.</p>
           <div className="compare-selects">
             <select className="form-select" value={cmp1} onChange={e => setCmp1(e.target.value)}><option value="">Case 1...</option>{opts}</select>
             <select className="form-select" value={cmp2} onChange={e => setCmp2(e.target.value)}><option value="">Case 2...</option>{opts}</select>
@@ -69,7 +69,7 @@ export default function AIAnalysis({ cases, showToast }) {
           <button className="btn btn-primary" onClick={doCompare} style={{ marginTop: 12 }}><i className="fas fa-chart-bar" /> Compare</button>
         </div>
       </div>
-      {loading && <div className="card"><div className="ai-loading"><div className="spinner" /><span>Puter AI is thinking...</span></div></div>}
+      {loading && <div className="card"><div className="ai-loading"><div className="spinner" /><span>Groq is thinking...</span></div></div>}
       {result && <div className="card ai-result"><h3><i className="fas fa-robot" /> Result</h3><div className="ai-md" dangerouslySetInnerHTML={{ __html: renderMd(result) }} /></div>}
     </div>
   )

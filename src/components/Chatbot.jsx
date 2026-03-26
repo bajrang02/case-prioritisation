@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { askJudgeChatbot } from '../services/gemini'
+import { askJudgeChatbot } from '../services/groq'
 
 export default function Chatbot({ cases }) {
   const [isOpen, setIsOpen] = useState(false)

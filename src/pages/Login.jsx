@@ -23,7 +23,7 @@ export default function Login({ onLogin, showToast, onBack }) {
 
     try {
       if (isSignUP) {
-        const res = await fetch('${import.meta.env.VITE_API_URL}/api/auth/signup', {
+        const res = await fetch('/api/auth/signup', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: user, pass, name: name || user, role, govId, profId })
         })
@@ -38,7 +38,7 @@ export default function Login({ onLogin, showToast, onBack }) {
         setGovId('')
         setProfId('')
       } else {
-        const res = await fetch('${import.meta.env.VITE_API_URL}/api/auth/login', {
+        const res = await fetch('/api/auth/login', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user, pass })
         })
