@@ -9,7 +9,7 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'https://jurisflow-3an7.onrender.com',
         changeOrigin: true
       }
     }
